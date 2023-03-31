@@ -1,30 +1,33 @@
 version: '3'
+
 services:
-  laravel:
-    # Tên container chứa đựng laravel
-    container_name: laravel_${APP_ENV}
+  apache:
     build:
-      context: .
+      context: ./php
       dockerfile: Dockerfile
+    container_name: apache_${APP_ENV}
     ports:
-      - "8083:80"
+      - '80:80'
     volumes:
+      - ./php/vhost.conf:/etc/apache2/sites-available/000-default.conf
       - ../../../laravel:/var/www
-    networks:
-      - app-network
-
-  webserver:
-    image: httpd:2.4
-    container_name: laravel-webserver
-    ports:
-      - "8000:80"
-    volumes:
-      - ./apache-config.conf:/usr/local/apache2/conf/httpd.conf
+    # Đợi cho mysql khởi động đã mới khởi động apache
     depends_on:
-      - app
-    networks:
-      - app-network
+      - mysql
 
-networks:
-  app-network:
-    driver: bridge
+  mysql:
+    build:
+      context: ./mysql
+      dockerfile: Dockerfile
+    container_name: mysql
+    environment:
+      MYSQL_DATABASE: laravel_apache_${APP_ENV}
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: docker
+      MYSQL_PASSWORD: docker
+    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+      - ./mysql/sql:/docker-entrypoint-initdb.d
+    ports:
+      - '23306:3306'
