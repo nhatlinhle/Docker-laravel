@@ -1,0 +1,30 @@
+version: '3'
+services:
+  laravel:
+    # Tên container chứa đựng laravel
+    container_name: laravel_${APP_ENV}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8083:80"
+    volumes:
+      - ../../../laravel:/var/www
+    networks:
+      - app-network
+
+  webserver:
+    image: httpd:2.4
+    container_name: laravel-webserver
+    ports:
+      - "8000:80"
+    volumes:
+      - ./apache-config.conf:/usr/local/apache2/conf/httpd.conf
+    depends_on:
+      - app
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
